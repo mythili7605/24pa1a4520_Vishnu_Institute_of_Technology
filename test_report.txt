@@ -1,0 +1,69 @@
+Hypertension Digital Twin -- Full Validation Report
+Generated: 2026-10-20 15:56:27
+=================================================================
+
+MODEL METRICS (Hold-out Test Set)
+  Accuracy           : 0.6561
+  Precision          : 0.5779
+  Recall/Sensitivity : 0.7067
+  F1-Score           : 0.6359
+  ROC-AUC            : 0.7225
+
+  Confusion Matrix:  TN=571  FP=352  FN=200  TP=482
+
+BASELINE COMPARISON
+  DummyClassifier Accuracy : 0.5751
+  RF Accuracy              : 0.6561  (+8.1% over baseline)
+  RF Recall                : 0.7067  (+70.7% over baseline)
+
+5-FOLD CROSS-VALIDATION
+  F1   mean=0.6247  std=0.0085
+  AUC  mean=0.7189  std=0.0123
+
+TEST RESULTS
+  PASS  A1: Model file loads without error
+  PASS  A2: NHANES datasets load & merge
+  PASS  A3: Both classes in test set
+  PASS  A4: Accuracy > 60%
+  PASS  A4: Recall  > 60%
+  PASS  A4: ROC-AUC > 0.65
+  PASS  A4: F1-Score > 0.55
+  PASS  A4: Confusion matrix 2x2
+  PASS  A5: RF beats Dummy on Accuracy
+  PASS  A5: RF beats Dummy on Recall
+  PASS  A5: RF beats Dummy on F1
+  PASS  A6: CV F1 std < 0.05 (stable)
+  PASS  A6: CV AUC std < 0.05 (stable)
+  PASS  A6: CV AUC mean > 0.65
+  PASS  A7: No raw BP columns in features (no data leakage)
+  PASS  B0: Test patient created in DB
+  PASS  A-1: Reading stored in DB
+  PASS  A-2: Exactly 1 reading retrieved
+  PASS  A-3: SBP stored correctly
+  PASS  A-4: DBP stored correctly
+  PASS  A-5: Timestamp stored
+  PASS  A-6: Patient ID matches
+  PASS  A-7: ACC/AHA classification correct (Stage 1 Range)
+  PASS  A-8: Elevated flag is True for 128/82
+  PASS  B-1: Second reading stored
+  PASS  B-2: History now has 2 readings
+  PASS  B-3: Readings in chronological order
+  PASS  B-4: Latest SBP is 145
+  PASS  B-5: Alert(s) generated for 145/92
+  PASS  B-6: At least one warning/danger alert
+  PASS  B-7: 145/92 classified as Stage 2 Range
+  PASS  C-1: All 7 readings stored (2 + 5)
+  PASS  C-2: Trend direction is computed
+  PASS  C-3: SBP slope is a float
+  PASS  C-4: Average SBP computed
+  PASS  C-5: Trend slope positive (rising data)
+  PASS  C-6: Trend detected as Rising
+  PASS  C-7: Same input -> same prediction (idempotent)
+  PASS  C-8: Model handles NaN inputs (imputer in pipeline)
+  PASS  C-9: Alert acknowledgement removes from unack list
+  PASS  C-10: Crisis alert fires for SBP 185 / DBP 118
+
+OVERALL: 41/41 passed (100%)
+
+DISCLAIMER: This report validates software behavior only.
+Results are not clinically validated. Not for medical use.

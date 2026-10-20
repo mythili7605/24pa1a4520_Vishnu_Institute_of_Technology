@@ -1,0 +1,26 @@
+Hypertension Digital Twin - RF Baseline Evaluation
+============================================================
+Accuracy           : 0.6561
+Precision          : 0.5779
+Recall             : 0.7067
+F1-Score           : 0.6359
+ROC-AUC            : 0.7225
+
+Confusion Matrix:
+[[571 352]
+ [200 482]]
+
+Classification Report:
+              precision    recall  f1-score   support
+
+      Normal       0.74      0.62      0.67       923
+ Elevated BP       0.58      0.71      0.64       682
+
+    accuracy                           0.66      1605
+   macro avg       0.66      0.66      0.66      1605
+weighted avg       0.67      0.66      0.66      1605
+
+
+5-Fold Cross-Validation:
+  F1    mean=0.6247  std=0.0085
+  AUC   mean=0.7189  std=0.0123

@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+  <title>Hypertension Digital Twin | Happiest Health 2026</title>
+  <meta name="description" content="Hypertension Digital Twin – virtual patient profiles, time-series BP tracking, AI risk prediction and proactive alerts."/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet"/>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}"/>
+</head>
+<body>
+
+<!-- ═══════════════ HEADER ═══════════════════════════════════ -->
+<header class="header">
+  <div class="brand">
+    <div class="brand-logo">&#129728;</div>
+    <div>
+      <div class="brand-name">Hypertension Digital Twin</div>
+      <div class="brand-sub">Happiest Health 2026 &nbsp;&#183;&nbsp; AI-Powered PoC &nbsp;&#183;&nbsp; NHANES Dataset</div>
+    </div>
+  </div>
+  <div class="header-right">
+    <select class="patient-selector" id="patient-select" onchange="loadPatient(this.value)">
+      <option value="">— Select Patient —</option>
+    </select>
+    <div class="alert-bell" id="alert-bell" onclick="scrollToAlerts()" title="View alerts">
+      &#128276;
+      <span class="alert-badge" id="alert-badge">0</span>
+    </div>
+    <div class="status-dot-wrap"><span class="sdot"></span> Model Active</div>
+    <span class="hclock" id="clock">--:--:--</span>
+  </div>
+</header>
+
+<!-- ═══════════════ MAIN LAYOUT ══════════════════════════════ -->
+<div class="layout">
+
+  <!-- ╔══════════════════════════════╗
+       ║  LEFT: Patient Panel         ║
+       ╚══════════════════════════════╝ -->
+  <aside class="patient-panel">
+
+    <div class="card">
+      <div class="ct"><span class="cdot" style="background:var(--cyan)"></span>Virtual Patients</div>
+      <div id="patient-list">
+        <div style="color:var(--text-3);font-size:.8rem;text-align:center;padding:1rem">Loading…</div>
+      </div>
+      <button class="btn-new-patient" id="btn-open-form" onclick="toggleNewPatientForm()">
+        &#43; Create New Patient
+      </button>
+    </div>
+
+    <!-- New patient inline form -->
+    <div class="card new-pt-form" id="new-pt-form">
+      <div class="ct"><span class="cdot" style="background:var(--green)"></span>New Patient Profile</div>
+
+      <div class="form-group">
+        <label class="form-label">Full Name / ID</label>
+        <input class="form-control" id="np-name" placeholder="e.g. Patient B" type="text"/>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Age</label>
+          <input class="form-control" id="np-age" type="number" min="18" max="85" value="45"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Sex</label>
+          <select class="form-control" id="np-sex">
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">BMI (kg/m²)</label>
+          <input class="form-control" id="np-bmi" type="number" step="0.1" value="25.0"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Waist (cm)</label>
+          <input class="form-control" id="np-waist" type="number" value="85"/>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">Height (cm)</label>
+          <input class="form-control" id="np-height" type="number" value="165"/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Poverty Ratio</label>
+          <input class="form-control" id="np-poverty" type="number" step="0.1" min="0" max="5" value="2.5"/>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Diabetes</label>
+        <select class="form-control" id="np-diabetes">
+          <option value="No">No Diabetes</option>
+          <option value="Yes">Diagnosed</option>
+          <option value="Borderline">Borderline</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label class="form-label">BP Medication</label>
+        <select class="form-control" id="np-bpmed">
+          <option value="No">Not on medication</option>
+          <option value="Yes">On BP medication</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:.6rem;margin-top:.25rem">
+        <button class="btn-sm" style="flex:1" onclick="createPatient()">&#10003; Save Patient</button>
+        <button class="btn-sm" style="flex:1;background:rgba(239,68,68,.08);border-color:rgba(239,68,68,.3);color:var(--red)"
+                onclick="toggleNewPatientForm()">Cancel</button>
+      </div>
+    </div>
+
+    <!-- Model info -->
+    <div class="card">
+      <div class="ct"><span class="cdot" style="background:var(--purple)"></span>RF Model Performance</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:.5rem;margin-bottom:.85rem">
+        <div style="background:rgba(6,182,212,.08);border:1px solid rgba(6,182,212,.2);border-radius:8px;padding:.5rem;text-align:center">
+          <div style="font-size:1rem;font-weight:800;color:var(--cyan)" id="mi-auc">0.722</div>
+          <div style="font-size:.62rem;color:var(--text-3)">ROC-AUC</div>
+        </div>
+        <div style="background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:.5rem;text-align:center">
+          <div style="font-size:1rem;font-weight:800;color:var(--green)" id="mi-f1">0.636</div>
+          <div style="font-size:.62rem;color:var(--text-3)">F1-Score</div>
+        </div>
+        <div style="background:rgba(139,92,246,.08);border:1px solid rgba(139,92,246,.2);border-radius:8px;padding:.5rem;text-align:center">
+          <div style="font-size:1rem;font-weight:800;color:var(--purple)" id="mi-rec">0.707</div>
+          <div style="font-size:.62rem;color:var(--text-3)">Recall</div>
+        </div>
+      </div>
+      <div style="font-size:.7rem;color:var(--text-3);line-height:1.5">
+        Trained on 8,024 NHANES adults &nbsp;&#183;&nbsp; 300 decision trees &nbsp;&#183;&nbsp; ACC/AHA 2017 threshold.
+        Metrics are preliminary; not clinically validated.
+      </div>
+    </div>
+
+  </aside>
+
+  <!-- ╔══════════════════════════════╗
+       ║  CENTER: Digital Twin View   ║
+       ╚══════════════════════════════╝ -->
+  <main class="center-col" id="twin-panel">
+
+    <!-- Empty state -->
+    <div id="empty-state" style="display:flex;flex-direction:column;align-items:center;justify-content:center;
+         height:60vh;gap:1rem;color:var(--text-3)">
+      <div style="font-size:4rem">&#129728;</div>
+      <div style="font-size:1.1rem;font-weight:700;color:var(--text-2)">Select a patient to view their Digital Twin</div>
+      <div style="font-size:.82rem">Choose from the panel on the left or create a new patient profile.</div>
+    </div>
+
+    <!-- Main twin content (hidden until patient selected) -->
+    <div id="twin-content" style="display:none;flex-direction:column;gap:1.25rem">
+
+      <!-- ── Top stats strip ────────────────────────────────── -->
+      <div class="stats-strip">
+        <div class="stat-card" style="--sc-color:var(--blue)">
+          <div class="stat-icon">&#129680;</div>
+          <div class="stat-val" id="s-sbp">--</div>
+          <div class="stat-label">Latest SBP</div>
+          <div class="stat-sub" id="s-sbp-lbl">mmHg</div>
+        </div>
+        <div class="stat-card" style="--sc-color:var(--cyan)">
+          <div class="stat-icon">&#128147;</div>
+          <div class="stat-val" id="s-dbp">--</div>
+          <div class="stat-label">Latest DBP</div>
+          <div class="stat-sub">mmHg</div>
+        </div>
+        <div class="stat-card" style="--sc-color:var(--amber)">
+          <div class="stat-icon">&#128200;</div>
+          <div class="stat-val" id="s-trend-val">--</div>
+          <div class="stat-label">SBP Trend</div>
+          <div class="stat-sub" id="s-trend-dir">per day</div>
+        </div>
+        <div class="stat-card" style="--sc-color:var(--purple)">
+          <div class="stat-icon">&#128203;</div>
+          <div class="stat-val" id="s-readings">0</div>
+          <div class="stat-label">Total Readings</div>
+          <div class="stat-sub" id="s-days">days tracked</div>
+        </div>
+      </div>
+
+      <!-- ── Gauge + BP trend ──────────────────────────────── -->
+      <div class="gauge-trend-row">
+
+        <!-- Risk Gauge -->
+        <div class="card gauge-card" id="gauge-card" style="transition:border-color .6s ease">
+          <div class="ct" style="margin-bottom:.5rem">
+            <span class="cdot" style="background:var(--red)"></span>AI Risk Score
+          </div>
+          <div class="gauge-wrap">
+            <canvas id="gauge-canvas" width="220" height="130" class="gauge-canvas"></canvas>
+            <div class="gauge-center">
+              <div class="gauge-val" id="gauge-value">--</div>
+              <div class="gauge-lbl">Elevated BP Probability</div>
+            </div>
+          </div>
+          <span class="risk-badge" id="risk-badge"
+                style="color:var(--blue);border-color:var(--blue);background:rgba(59,130,246,.1)">
+            Awaiting Data
+          </span>
+          <p class="risk-desc" id="risk-desc">Add a BP reading to update the risk estimate.</p>
+          <div class="risk-scale">
+            <span class="rs-pip" style="background:rgba(34,197,94,.15);color:var(--green)">&#9679; Lower &lt;30%</span>
+            <span class="rs-pip" style="background:rgba(245,158,11,.15);color:var(--amber)">&#9679; Moderate 30–55%</span>
+            <span class="rs-pip" style="background:rgba(249,115,22,.15);color:var(--orange)">&#9679; Higher &ge;55%</span>
+          </div>
+          <!-- BP classification label -->
+          <div style="margin-top:.75rem;font-size:.75rem;color:var(--text-2);text-align:center">
+            ACC/AHA Stage: <strong id="bp-stage" style="color:var(--text-1)">—</strong>
+          </div>
+        </div>
+
+        <!-- BP Trend Chart -->
+        <div class="card trend-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem">
+            <div class="ct" style="margin-bottom:0">
+              <span class="cdot" style="background:var(--cyan)"></span>Blood Pressure Timeline
+            </div>
+            <span class="trend-dir" id="trend-dir-badge">—</span>
+          </div>
+          <div class="trend-meta">
+            <div class="tmeta">
+              <div class="tmeta-val" id="tm-avg-sbp" style="color:var(--orange)">--</div>
+              <div class="tmeta-lbl">Avg SBP</div>
+            </div>
+            <div class="tmeta">
+              <div class="tmeta-val" id="tm-avg-dbp" style="color:var(--blue)">--</div>
+              <div class="tmeta-lbl">Avg DBP</div>
+            </div>
+            <div class="tmeta">
+              <div class="tmeta-val" id="tm-max-sbp" style="color:var(--red)">--</div>
+              <div class="tmeta-lbl">Peak SBP</div>
+            </div>
+            <div class="tmeta">
+              <div class="tmeta-val" id="tm-slope" style="color:var(--amber)">--</div>
+              <div class="tmeta-lbl">SBP Slope</div>
+            </div>
+          </div>
+          <div class="chart-wrap">
+            <canvas id="bp-chart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Alerts ────────────────────────────────────────── -->
+      <div class="card alerts-card" id="alerts-section">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem">
+          <div class="ct" style="margin-bottom:0">
+            <span class="cdot" style="background:var(--amber)"></span>
+            Clinical Alerts &nbsp;<span id="alert-count-lbl" style="font-size:.7rem;color:var(--text-3)"></span>
+          </div>
+          <button class="btn-sm" onclick="ackAllAlerts()">&#10003; Dismiss All</button>
+        </div>
+        <div id="alerts-list">
+          <div class="no-alerts">&#10003; No active alerts</div>
+        </div>
+      </div>
+
+    </div><!-- /twin-content -->
+  </main>
+
+  <!-- ╔══════════════════════════════╗
+       ║  RIGHT: Add Reading + History ║
+       ╚══════════════════════════════╝ -->
+  <aside class="right-col">
+
+    <!-- Add Reading form -->
+    <div class="card add-reading-card">
+      <div class="ct"><span class="cdot" style="background:var(--green)"></span>New BP Reading</div>
+
+      <div class="bp-row">
+        <div class="form-group">
+          <label class="form-label">
+            Systolic (SBP) &nbsp;<span class="range-val" id="sbp-val">120</span>
+          </label>
+          <input type="range" id="r-sbp" min="70" max="220" value="120" step="1"
+                 oninput="document.getElementById('r-sbp-num').value=this.value;document.getElementById('sbp-val').textContent=this.value"/>
+          <input class="form-control" id="r-sbp-num" type="number" min="70" max="220" value="120" style="margin-top:.4rem"
+                 oninput="document.getElementById('r-sbp').value=this.value;document.getElementById('sbp-val').textContent=this.value"/>
+          <div class="range-row"><span>70</span><span>220 mmHg</span></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">
+            Diastolic (DBP) &nbsp;<span class="range-val" id="dbp-val">80</span>
+          </label>
+          <input type="range" id="r-dbp" min="40" max="140" value="80" step="1"
+                 oninput="document.getElementById('r-dbp-num').value=this.value;document.getElementById('dbp-val').textContent=this.value"/>
+          <input class="form-control" id="r-dbp-num" type="number" min="40" max="140" value="80" style="margin-top:.4rem"
+                 oninput="document.getElementById('r-dbp').value=this.value;document.getElementById('dbp-val').textContent=this.value"/>
+          <div class="range-row"><span>40</span><span>140 mmHg</span></div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Heart Rate (optional)</label>
+        <input class="form-control" id="r-hr" type="number" min="40" max="180" placeholder="e.g. 72 bpm"/>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Date &amp; Time</label>
+        <input class="form-control" id="r-ts" type="datetime-local"/>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">Notes (optional)</label>
+        <input class="form-control" id="r-notes" type="text" placeholder="e.g. Morning reading, post exercise"/>
+      </div>
+
+      <button class="btn-add" id="btn-add-reading" onclick="addReading()">
+        &#10133; Add Reading
+      </button>
+
+      <div id="reading-feedback" style="margin-top:.65rem;font-size:.76rem;display:none"></div>
+    </div>
+
+    <!-- Patient profile summary -->
+    <div class="card" id="pt-profile-card" style="display:none">
+      <div class="ct"><span class="cdot" style="background:var(--purple)"></span>Patient Profile</div>
+      <div id="pt-profile-body" style="font-size:.8rem;display:flex;flex-direction:column;gap:.4rem"></div>
+    </div>
+
+    <!-- Reading history -->
+    <div class="card">
+      <div class="ct"><span class="cdot" style="background:var(--blue)"></span>Reading History</div>
+      <div class="history-scroll">
+        <div id="reading-history">
+          <div style="color:var(--text-3);font-size:.78rem;text-align:center;padding:1rem">
+            Select a patient to view history
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </aside>
+</div><!-- /layout -->
+
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
